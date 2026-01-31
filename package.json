@@ -1,0 +1,34 @@
+{
+  "name": "@watthem/similar-files",
+  "version": "0.1.0",
+  "description": "TF-IDF similarity search for codebase files. Index a workspace and find related files using cosine similarity.",
+  "type": "module",
+  "keywords": [
+    "tfidf",
+    "similarity",
+    "search",
+    "codebase",
+    "cli",
+    "developer-tools"
+  ],
+  "author": "Matthew Hendricks <matthew.scott.hendricks@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/watthem/similar-files.git"
+  },
+  "bugs": {
+    "url": "https://github.com/watthem/similar-files/issues"
+  },
+  "homepage": "https://github.com/watthem/similar-files#readme",
+  "dependencies": {
+    "@watthem/quarrel": "^0.1.1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "similar-index": "./scripts/index-workspace.mjs",
+    "similar-find": "./scripts/find-similar.mjs"
+  }
+}
