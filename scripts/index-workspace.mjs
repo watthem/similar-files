@@ -13,8 +13,7 @@ import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, relative, extname, basename, resolve } from 'node:path';
 import {
   vectorizeDocuments,
-  fingerprintText,
-  stripFrontmatter
+  fingerprintText
 } from '@watthem/quarrel';
 import {
   DEFAULT_CONFIG,
@@ -22,6 +21,88 @@ import {
   getIndexFile,
   parseBaseArgs
 } from './shared.mjs';
+
+/**
+ * Parse YAML frontmatter from markdown content.
+ * Returns { frontmatter: object|null, body: string }
+ */
+function parseFrontmatter(content) {
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+  if (!match) {
+    return { frontmatter: null, body: content };
+  }
+
+  const yamlBlock = match[1];
+  const body = match[2];
+
+  // Simple YAML parser for common frontmatter fields
+  const frontmatter = {};
+  const lines = yamlBlock.split('\n');
+  let currentKey = null;
+  let inArray = false;
+
+  for (const line of lines) {
+    // Array item (indented with -)
+    if (inArray && /^\s+-\s*["']?(.+?)["']?\s*$/.test(line)) {
+      const value = line.match(/^\s+-\s*["']?(.+?)["']?\s*$/)[1];
+      if (!frontmatter[currentKey]) frontmatter[currentKey] = [];
+      frontmatter[currentKey].push(value);
+      continue;
+    }
+
+    // Key-value pair
+    const kvMatch = line.match(/^(\w+):\s*["']?(.*)["']?\s*$/);
+    if (kvMatch) {
+      currentKey = kvMatch[1];
+      const value = kvMatch[2].replace(/^["']|["']$/g, '').trim();
+      if (value) {
+        frontmatter[currentKey] = value;
+        inArray = false;
+      } else {
+        // Empty value might mean upcoming array
+        inArray = true;
+      }
+    }
+  }
+
+  return { frontmatter, body };
+}
+
+/**
+ * Build enriched content for vectorization.
+ * Includes frontmatter metadata (title, description, tags) for better similarity matching.
+ */
+function buildEnrichedContent(content, filename) {
+  const { frontmatter, body } = parseFrontmatter(content);
+
+  const parts = [];
+
+  // Include frontmatter fields that aid similarity
+  if (frontmatter) {
+    if (frontmatter.title) parts.push(frontmatter.title);
+    if (frontmatter.description) parts.push(frontmatter.description);
+    if (Array.isArray(frontmatter.tags)) {
+      parts.push(frontmatter.tags.join(' '));
+    }
+  }
+
+  // Include meaningful filename (skip pure numeric IDs like 202601310041)
+  const baseName = basename(filename, extname(filename));
+  if (!/^\d+$/.test(baseName)) {
+    // Convert kebab-case/snake_case to words
+    const nameWords = baseName.replace(/[-_]/g, ' ');
+    parts.push(nameWords);
+  }
+
+  // Add the body content
+  parts.push(body);
+
+  return {
+    enrichedContent: parts.join('\n'),
+    frontmatter,
+    body
+  };
+}
 
 function printHelp() {
   console.log(`
@@ -83,9 +164,14 @@ async function collectFiles(dir, options, files = []) {
 }
 
 /**
- * Extract a title from file content.
+ * Extract a title from file content and frontmatter.
  */
-function extractTitle(content, filename) {
+function extractTitle(content, filename, frontmatter) {
+  // Prefer frontmatter title
+  if (frontmatter?.title) {
+    return frontmatter.title;
+  }
+
   // Try to find markdown heading
   const headingMatch = content.match(/^#\s+(.+)$/m);
   if (headingMatch) {
@@ -131,13 +217,14 @@ async function buildIndex(options) {
     try {
       const content = await readFile(filePath, 'utf-8');
       const relativePath = relative(root, filePath);
-      const title = extractTitle(content, filePath);
+      const { enrichedContent, frontmatter, body } = buildEnrichedContent(content, filePath);
+      const title = extractTitle(body, filePath, frontmatter);
       const fingerprint = fingerprintText(content);
 
       docs.push({
         id: relativePath,
         title,
-        content: stripFrontmatter(content)
+        content: enrichedContent
       });
 
       metadata.push({
@@ -145,7 +232,8 @@ async function buildIndex(options) {
         path: relativePath,
         title,
         fingerprint,
-        ext: extname(filePath).toLowerCase()
+        ext: extname(filePath).toLowerCase(),
+        tags: frontmatter?.tags || []
       });
     } catch (err) {
       console.warn(`Skipping ${filePath}: ${err.message}`);
@@ -177,7 +265,7 @@ async function buildIndex(options) {
 
   // Write index
   const index = {
-    version: 2,
+    version: 3,  // v3: includes frontmatter metadata in vectorization
     created: new Date().toISOString(),
     root,
     hashDim: DEFAULT_CONFIG.hashDim,
