@@ -1,5 +1,6 @@
 {
-  "items": [
+  "items": [],
+  "resolved": [
     {
       "id": "similar-files.DEV-2026-02-001",
       "type": "DEV",
@@ -8,10 +9,11 @@
       "stage": "draft",
       "priority": "P2",
       "updated": "2026-02-09T00:00:00Z",
-      "next_step": "Review similar-files repo state and identify next actions"
+      "next_step": "Review similar-files repo state and identify next actions",
+      "resolution": "Archived: co-founder keep/kill review 2026-02-27 — supporting lane cleanup, forage pipeline inits",
+      "resolved_at": "2026-02-27T19:48:11Z"
     }
   ],
-  "resolved": [],
   "counters": {
     "DEV": 1
   },

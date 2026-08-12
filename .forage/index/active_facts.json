@@ -1,0 +1,24 @@
+{
+  "tickets": {
+    "similar-files.DEV-2026-02-001": {
+      "stage": "draft",
+      "active_facts": [
+        {
+          "id": "fact_1786509032_eb5534",
+          "fact_type": "claim",
+          "ticket_id": "similar-files.DEV-2026-02-001",
+          "authority": "agent_provisional",
+          "timestamp": "2026-08-12T04:30:32Z",
+          "payload": {
+            "claim": "Ticket migrated from pre-v0.1 forage schema, stage at migration time: draft.",
+            "scope": "tickets/similar-files.DEV-2026-02-001.md",
+            "tags": [
+              "migrated-from-legacy-schema"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "resolved": {}
+}
