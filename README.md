@@ -83,7 +83,7 @@ similar-find -i ~/.my-indexes/proj src/main.ts
 
 ## Excluded Directories
 
-`node_modules`, `venv`, `.venv`, `target`, `.git`, `dist`, `build`, `__pycache__`, `.pnpm-store`, `.cloudflare`, `archives`, `.next`, `.cache`, `coverage`
+`node_modules`, `venv`, `.venv`, `target`, `.git`, `dist`, `build`, `__pycache__`, `.pnpm-store`, `.netlify`, `archives`, `.next`, `.cache`, `coverage`
 
 ## Example Output
 
